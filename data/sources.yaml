@@ -1,0 +1,32 @@
+# Real, public AI-governance documents. Nothing here is synthetic; if a
+# download or extraction fails, the ingest report discloses the gap.
+sources:
+  - id: nist-ai-rmf
+    title: "NIST AI Risk Management Framework 1.0 (NIST AI 100-1)"
+    type: pdf
+    url: https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf
+
+  - id: nist-genai-profile
+    title: "NIST Generative AI Profile (NIST AI 600-1)"
+    type: pdf
+    url: https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf
+
+  - id: eu-ai-act
+    title: "EU Artificial Intelligence Act (Regulation (EU) 2024/1689, Official Journal)"
+    type: pdf
+    url: "https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=OJ:L_202401689"
+
+  - id: ai-bill-of-rights
+    title: "Blueprint for an AI Bill of Rights (US OSTP, 2022)"
+    type: pdf
+    url: https://bidenwhitehouse.archives.gov/wp-content/uploads/2022/10/Blueprint-for-an-AI-Bill-of-Rights.pdf
+
+  - id: oecd-ai-principles
+    title: "OECD AI Principles overview"
+    type: html
+    url: https://www.oecd.org/en/topics/sub-issues/ai-principles.html
+
+  - id: ec-ai-act-overview
+    title: "European Commission — Regulatory framework for AI (overview page)"
+    type: html
+    url: https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai

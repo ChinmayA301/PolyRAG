@@ -1,0 +1,46 @@
+[project]
+name = "polyrag"
+version = "0.1.0"
+description = "Multi-model RAG over real AI-governance documents: FAISS retrieval, Crawl4AI + OCR ingestion, side-by-side answers from LLaMA / GPT-OSS / Qwen / DeepSeek via OpenAI-compatible APIs."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Chinmay Arora" }]
+dependencies = [
+    "openai>=1.40",
+    "faiss-cpu>=1.8",
+    "numpy>=1.26",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "typer>=0.12",
+    "rich>=13.7",
+    "httpx>=0.27",
+    "pymupdf>=1.24",
+    "pyyaml>=6.0",
+    "fastapi>=0.111",
+    "uvicorn>=0.30",
+]
+
+[project.optional-dependencies]
+embed = ["sentence-transformers>=3.0"]
+crawl = ["crawl4ai>=0.6", "trafilatura>=1.9"]
+ocr = ["rapidocr-onnxruntime>=1.3"]
+dev = ["pytest>=8.2", "pytest-asyncio>=0.23", "ruff>=0.5"]
+
+[project.scripts]
+polyrag = "polyrag.cli:app"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]

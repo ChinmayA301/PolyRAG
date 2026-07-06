@@ -1,0 +1,22 @@
+# secrets
+.env
+
+# python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+
+# data artifacts (rebuild with `polyrag ingest && polyrag index`)
+data/raw/
+data/extracted/
+data/index/
+
+# os / editors
+.DS_Store
+.idea/
+.vscode/
