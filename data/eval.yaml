@@ -1,0 +1,22 @@
+# Labeled retrieval eval set: each question names the source document a
+# correct retrieval must surface in the top-k. Hand-written against the real
+# documents; expand as the corpus grows.
+questions:
+  - question: "What are the four core functions of the NIST AI Risk Management Framework?"
+    expected_source: nist-ai-rmf
+  - question: "How does NIST define trustworthy AI characteristics such as validity and reliability?"
+    expected_source: nist-ai-rmf
+  - question: "Which risks does NIST identify as unique to or exacerbated by generative AI?"
+    expected_source: nist-genai-profile
+  - question: "What obligations does the EU AI Act place on providers of high-risk AI systems?"
+    expected_source: eu-ai-act
+  - question: "How does the EU AI Act define prohibited AI practices?"
+    expected_source: eu-ai-act
+  - question: "What are the five principles in the Blueprint for an AI Bill of Rights?"
+    expected_source: ai-bill-of-rights
+  - question: "What does the AI Bill of Rights say about algorithmic discrimination protections?"
+    expected_source: ai-bill-of-rights
+  - question: "What values-based principles do the OECD AI Principles promote?"
+    expected_source: oecd-ai-principles
+  - question: "How does the European Commission categorize AI systems by risk level?"
+    expected_source: ec-ai-act-overview
