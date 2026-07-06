@@ -57,10 +57,23 @@ does not list them" rather than fabricating the list.
 `pytest` — 20 passed (mock provider + hashing embedder; no keys or model
 downloads needed, same configuration CI runs).
 
-## Not verified
+## DeepSeek verification (added 2026-07-06, later same day)
 
-- DeepSeek via OpenRouter: implemented and error-path tested, but not run live
-  (no OpenRouter key on this machine at verification time).
+Free-tier churn, documented honestly: Groq deprecated its DeepSeek distill, and
+OpenRouter retired `deepseek/deepseek-r1:free` (confirmed live: 404 "unavailable
+for free"). The registry made the swap a one-line change: DeepSeek now runs on
+the **GitHub Models free tier** (`models.github.ai`, OpenAI-compatible, any PAT
+with `models:read`). Verified live on the prohibited-practices question,
+same shared context as LLaMA:
+
+| model | latency | behavior |
+|---|---|---|
+| deepseek/deepseek-v3-0324 | 5.7s | cited [1][2], flagged that the context doesn't enumerate the practices |
+| deepseek/deepseek-r1-0528 | 5.4s | `<think>` trace stripped cleanly; most explicit refusal to overclaim of any model tested |
+
+## Not verified
+- OpenRouter (`hermes` alias): implemented; the key on this machine returned
+  401 at verification time, so not verified live.
 - Local Ollama provider: implemented, not run (Ollama not installed here).
 - CUDA embedding: code path is standard torch/sentence-transformers; verified
   on MPS only.

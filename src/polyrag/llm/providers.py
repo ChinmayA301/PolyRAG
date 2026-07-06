@@ -19,6 +19,7 @@ from polyrag.config import settings
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+GITHUB_MODELS_BASE_URL = "https://models.github.ai/inference"
 
 
 @dataclass(frozen=True)
@@ -36,7 +37,9 @@ REGISTRY: dict[str, ModelSpec] = {
         ModelSpec("gpt-oss", "groq", "openai/gpt-oss-120b", "OpenAI gpt-oss 120B open-weight (Groq free tier)"),
         ModelSpec("qwen", "groq", "qwen/qwen3-32b", "Alibaba Qwen3 32B (Groq free tier)"),
         ModelSpec("scout", "groq", "meta-llama/llama-4-scout-17b-16e-instruct", "Meta LLaMA 4 Scout (Groq free tier)"),
-        ModelSpec("deepseek", "openrouter", "deepseek/deepseek-r1:free", "DeepSeek R1 (OpenRouter free tier; needs OPENROUTER_API_KEY)"),
+        ModelSpec("deepseek", "github", "deepseek/deepseek-v3-0324", "DeepSeek V3 (GitHub Models free tier; needs GITHUB_TOKEN)"),
+        ModelSpec("deepseek-r1", "github", "deepseek/deepseek-r1-0528", "DeepSeek R1 reasoning (GitHub Models free tier; needs GITHUB_TOKEN)"),
+        ModelSpec("hermes", "openrouter", "nousresearch/hermes-3-llama-3.1-405b:free", "Hermes 3 LLaMA 405B (OpenRouter free tier; needs OPENROUTER_API_KEY)"),
         ModelSpec("ollama", "ollama", "llama3.2", "Local model via Ollama (no API key; edit model_id to taste)"),
         ModelSpec("mock", "mock", "mock", "Deterministic offline provider for tests and demos without keys"),
     ]
@@ -74,6 +77,12 @@ def _client_for(spec: ModelSpec) -> OpenAI:
             raise ProviderError(
                 "OPENROUTER_API_KEY is not set (free key: https://openrouter.ai/keys)")
         return OpenAI(base_url=OPENROUTER_BASE_URL, api_key=settings.openrouter_api_key,
+                      timeout=settings.request_timeout)
+    if spec.provider == "github":
+        if not settings.github_token:
+            raise ProviderError(
+                "GITHUB_TOKEN is not set (use a PAT with models:read, or `gh auth token`)")
+        return OpenAI(base_url=GITHUB_MODELS_BASE_URL, api_key=settings.github_token,
                       timeout=settings.request_timeout)
     if spec.provider == "ollama":
         return OpenAI(base_url=settings.ollama_base_url, api_key="ollama",
@@ -136,6 +145,7 @@ def available_aliases() -> list[dict]:
             spec.provider == "mock"
             or (spec.provider == "groq" and bool(settings.groq_api_key))
             or (spec.provider == "openrouter" and bool(settings.openrouter_api_key))
+            or (spec.provider == "github" and bool(settings.github_token))
             or spec.provider == "ollama"  # can't know without probing; assume maybe
         )
         out.append({"alias": spec.alias, "provider": spec.provider, "model_id": spec.model_id,

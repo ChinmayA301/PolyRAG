@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     # free tier lights up DeepSeek; Ollama needs no key at all.
     groq_api_key: str = ""
     openrouter_api_key: str = ""
+    # GitHub Models free tier (serves DeepSeek): any PAT with models:read,
+    # or simply `GITHUB_TOKEN=$(gh auth token)`.
+    github_token: str = ""
     ollama_base_url: str = "http://localhost:11434/v1"
 
     # Data layout
