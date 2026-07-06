@@ -36,7 +36,7 @@ def test_unknown_alias_raises(store, embedder):
 def test_missing_key_surfaces_as_error_not_exception(store, embedder, monkeypatch):
     from polyrag.config import settings
 
-    monkeypatch.setattr(settings, "openrouter_api_key", "")
+    monkeypatch.setattr(settings, "github_token", "")
     assert "deepseek" in REGISTRY
     result = rag.ask("q?", "deepseek", store, embedder, k=1)
     assert result.completion.error  # degraded, not crashed

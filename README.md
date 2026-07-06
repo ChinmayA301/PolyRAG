@@ -7,9 +7,12 @@ answers are attributable to the model, not to retrieval variance.
 The corpus is real, public policy documents (NIST AI RMF, NIST GenAI Profile,
 EU AI Act, Blueprint for an AI Bill of Rights, OECD AI Principles) — no synthetic data.
 
-**Everything runs on free tiers**: Groq for hosted models, OpenRouter free models for
-DeepSeek, local Ollama as a no-key option, local embeddings, exact FAISS search, and a
-Cloud Run deployment that fits the always-free tier at demo traffic.
+**Everything runs on free tiers**: Groq for LLaMA/GPT-OSS/Qwen, GitHub Models for
+DeepSeek, OpenRouter free models, local Ollama as a no-key option, local embeddings,
+exact FAISS search, and a Cloud Run deployment that fits the always-free tier at demo
+traffic.
+
+![Live comparison: LLaMA 3.3 (Groq), GPT-OSS 120B (Groq), and DeepSeek V3 (GitHub Models) answering the same EU AI Act question from identical retrieved context](docs/compare.png)
 
 ## Architecture
 
@@ -41,10 +44,11 @@ Cloud Run deployment that fits the always-free tier at demo traffic.
  │ top-k retrieve once → numbered context  │
  │ fan out in parallel to N models via     │
  │ OpenAI-compatible APIs:                 │
- │   Groq:       LLaMA 3.3 70B, GPT-OSS    │
- │               120B, Qwen3, LLaMA 4 Scout│
- │   OpenRouter: DeepSeek R1 (free tier)   │
- │   Ollama:     any local model, no key   │
+ │   Groq:          LLaMA 3.3 70B, GPT-OSS │
+ │                  120B, Qwen3, Scout     │
+ │   GitHub Models: DeepSeek V3 + R1       │
+ │   OpenRouter:    Hermes 3 405B (:free)  │
+ │   Ollama:        any local model, no key│
  │ answers must cite blocks as [n]         │
  └─────────────────────────────────────────┘
         │
@@ -67,7 +71,7 @@ polyrag models                     # what's ready on this machine
 
 polyrag ask "What are the four core functions of the NIST AI RMF?" -m llama
 polyrag compare "What obligations does the EU AI Act place on providers of high-risk AI systems?" \
-    -m llama -m gpt-oss -m qwen
+    -m llama -m gpt-oss -m deepseek
 polyrag eval -m llama -m gpt-oss   # retrieval hit@k + per-model generation stats
 polyrag serve                      # web UI at http://localhost:8080
 ```
@@ -100,8 +104,8 @@ This repo is a portfolio artifact; the claims it supports are deliberately scope
 
 | Claim | Status |
 |---|---|
-| Multi-model retrieval via OpenAI-compatible APIs (Groq, OpenRouter, Ollama) | Implemented; LLaMA 3.3, GPT-OSS 120B, Qwen3 verified live on Groq free tier |
-| DeepSeek support | Implemented via OpenRouter free tier (`deepseek/deepseek-r1:free`); requires a free OpenRouter key |
+| Multi-model retrieval via OpenAI-compatible APIs (Groq, GitHub Models, OpenRouter, Ollama) | Implemented; LLaMA 3.3, GPT-OSS 120B, Qwen3 verified live on Groq free tier |
+| DeepSeek support | Verified live: DeepSeek V3 + R1 via GitHub Models free tier (any PAT with `models:read`). Groq and OpenRouter both retired their free DeepSeek offerings — the registry made this a one-line swap |
 | FAISS vector search | Exact `IndexFlatIP` over normalized MiniLM embeddings — appropriate at this corpus size; swap to IVF/HNSW only when scale demands it |
 | Crawl4AI ingestion | Default web fetcher (HTTP strategy; `js: true` per source enables browser rendering); httpx+trafilatura fallback, and every record is tagged with the path that produced it |
 | OCR | RapidOCR fallback for PDF pages with no text layer; pages that need OCR without it installed are disclosed as gaps, never silently dropped |
