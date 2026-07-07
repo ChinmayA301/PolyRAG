@@ -6,7 +6,16 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+def _project_root() -> Path:
+    """Repo root in an editable/src checkout; the working directory when the
+    package is pip-installed (e.g. in the Docker image, where WORKDIR /app
+    holds data/ and static/)."""
+    candidate = Path(__file__).resolve().parents[2]
+    return candidate if (candidate / "data").is_dir() else Path.cwd()
+
+
+PROJECT_ROOT = _project_root()
 
 
 class Settings(BaseSettings):

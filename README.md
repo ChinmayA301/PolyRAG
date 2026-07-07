@@ -1,5 +1,8 @@
 # polyrag — multi-model RAG over real AI-governance documents
 
+**Live demo: [chinmaya301-polyrag.hf.space](https://chinmaya301-polyrag.hf.space)**
+(free Hugging Face Space; may take a moment to wake if idle)
+
 Ask a question about AI governance and get **side-by-side, citation-grounded answers
 from multiple LLMs** — same question, same retrieved context, so differences in the
 answers are attributable to the model, not to retrieval variance.
@@ -110,7 +113,8 @@ This repo is a portfolio artifact; the claims it supports are deliberately scope
 | Crawl4AI ingestion | Default web fetcher (HTTP strategy; `js: true` per source enables browser rendering); httpx+trafilatura fallback, and every record is tagged with the path that produced it |
 | OCR | RapidOCR fallback for PDF pages with no text layer; pages that need OCR without it installed are disclosed as gaps, never silently dropped |
 | CUDA optimization | Embedding device auto-detect (CUDA > Apple MPS > CPU). Developed on Apple Silicon (MPS); the CUDA path is the standard sentence-transformers/torch path but was not benchmarked on an NVIDIA GPU |
-| Docker + GCP | Dockerfile (index baked in, embedding model pre-warmed) + Cloud Run deploy script using Cloud Build — fits GCP's always-free tier at demo traffic |
+| Docker deployment | Live: the demo Space runs this repo's Dockerfile (index baked in, embedding model pre-warmed) on Hugging Face's free Docker hosting via `deploy/hf_space.py` |
+| GCP | Cloud Run deploy pipeline (`deploy/cloudrun.sh`, Cloud Build, free-tier sizing) — complete and reviewed, not executed: Cloud Run requires a billing-linked account, and this project deliberately runs card-free |
 
 ## Project layout
 
@@ -133,14 +137,17 @@ deploy/      cloudrun.sh (Cloud Build → Cloud Run)
 # Local container
 docker compose up --build              # http://localhost:8080
 
-# Cloud Run (no local Docker needed — builds remotely with Cloud Build)
+# Hugging Face Space (free, no card; what the live demo runs)
+HF_TOKEN=... GROQ_API_KEY=... python deploy/hf_space.py
+
+# Cloud Run (needs a billing-linked GCP project; builds remotely with Cloud Build)
 export GROQ_API_KEY=...
 ./deploy/cloudrun.sh <PROJECT_ID> [region]
 ```
 
 The image bakes in the FAISS index and pre-downloads the embedding model, so cold
-starts don't fetch anything. `--min-instances 0 --max-instances 2` keeps a demo
-deployment inside the free tier.
+starts don't fetch anything. The hosted demo exposes the Groq-served models; keys
+live in platform secrets, never in the image or git history.
 
 ## License
 

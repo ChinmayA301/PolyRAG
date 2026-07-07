@@ -5,10 +5,14 @@
 # when deployed on GPU hosts; on Cloud Run CPU it falls back cleanly.
 FROM python:3.12-slim AS base
 
+# HF_HOME keeps the model cache inside /app so it works when the container
+# runs as a non-root user (Hugging Face Spaces runs as uid 1000; Cloud Run
+# doesn't care either way).
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    EMBED_DEVICE=cpu
+    EMBED_DEVICE=cpu \
+    HF_HOME=/app/hf-cache
 
 WORKDIR /app
 
@@ -16,14 +20,16 @@ COPY pyproject.toml README.md ./
 COPY src ./src
 RUN pip install --no-cache-dir ".[embed]"
 
-# Warm the embedding model into the image so Cloud Run cold starts don't
-# download ~90MB from HuggingFace on first request.
+# Warm the embedding model into the image so cold starts don't download
+# ~90MB from HuggingFace on first request.
 RUN python -c "from sentence_transformers import SentenceTransformer; \
 SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')"
 
 COPY static ./static
 COPY data/index ./data/index
 COPY data/sources.yaml data/eval.yaml ./data/
+
+RUN chmod -R a+rX /app && chmod -R a+rwX /app/hf-cache
 
 EXPOSE 8080
 CMD ["uvicorn", "polyrag.api:app", "--host", "0.0.0.0", "--port", "8080"]
