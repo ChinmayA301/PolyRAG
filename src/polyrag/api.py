@@ -16,12 +16,12 @@ from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel, Field
 
 from polyrag import rag
-from polyrag.config import settings
+from polyrag.config import PROJECT_ROOT, settings
 from polyrag.index.embedder import get_embedder
 from polyrag.index.store import VectorStore
 from polyrag.llm.providers import REGISTRY, available_aliases
 
-STATIC_DIR = Path(__file__).resolve().parents[2] / "static"
+STATIC_DIR = PROJECT_ROOT / "static"
 
 state: dict = {}
 

@@ -77,5 +77,17 @@ same shared context as LLaMA:
 - Local Ollama provider: implemented, not run (Ollama not installed here).
 - CUDA embedding: code path is standard torch/sentence-transformers; verified
   on MPS only.
-- Cloud Run deployment: scripts complete and reviewed; not executed (deploy-ready
-  by choice — nothing bills without an explicit deploy).
+- Cloud Run deployment: scripts complete and reviewed; not executed. Cloud Run
+  requires a billing-linked account (a card, even inside the free tier), and this
+  project runs card-free — the live Docker deployment is the Hugging Face Space
+  below instead.
+
+## Live deployment (added 2026-07-06)
+
+`deploy/hf_space.py` → https://chinmaya301-polyrag.hf.space — the repo's
+Dockerfile running on Hugging Face Spaces' free Docker tier (no card), FAISS
+index and embedding model baked into the image, GROQ_API_KEY as a Space secret.
+Verified after build: `/healthz` reports the baked index; a live `/compare`
+returned grounded answers. The hosted demo serves the Groq models only —
+the GitHub Models token is deliberately not deployed (a `gh` CLI token has repo
+access; a scoped models:read PAT could be added later).
