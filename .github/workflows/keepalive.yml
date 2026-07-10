@@ -1,0 +1,50 @@
+name: keepalive
+
+# Free Hugging Face Spaces sleep after ~48h idle and can be evicted by the
+# scheduler (surfacing as "unable to schedule"). This pings the live demo to
+# keep it warm and, if it's unhealthy, restarts it via the HF API so the
+# portfolio link is up when someone actually visits.
+
+on:
+  schedule:
+    - cron: "0 */6 * * *" # every 6 hours
+  workflow_dispatch: {} # allow manual "Run workflow"
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Health check (wakes a sleeping Space)
+        id: health
+        run: |
+          code=$(curl -s -L --max-time 120 -o /dev/null -w "%{http_code}" \
+            https://chinmaya301-polyrag.hf.space/healthz || echo 000)
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "Health check returned HTTP $code"
+
+      - name: Restart Space if unhealthy
+        if: steps.health.outputs.code != '200'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::error::Space is unhealthy (HTTP ${{ steps.health.outputs.code }}) and HF_TOKEN secret is not set, so it can't be restarted."
+            exit 1
+          fi
+          echo "Space unhealthy (HTTP ${{ steps.health.outputs.code }}) — requesting restart…"
+          curl -s -X POST \
+            -H "Authorization: Bearer $HF_TOKEN" \
+            https://huggingface.co/api/spaces/ChinmayA301/polyrag/restart | head -c 400
+          echo
+
+      - name: Confirm recovery
+        if: steps.health.outputs.code != '200'
+        run: |
+          for i in $(seq 1 20); do
+            code=$(curl -s -L --max-time 120 -o /dev/null -w "%{http_code}" \
+              https://chinmaya301-polyrag.hf.space/healthz || echo 000)
+            echo "[$i] HTTP $code"
+            [ "$code" = "200" ] && echo "Recovered." && exit 0
+            sleep 20
+          done
+          echo "::warning::Space did not return healthy within ~7 min after restart."
