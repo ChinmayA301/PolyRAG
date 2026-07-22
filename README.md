@@ -3,6 +3,8 @@
 **Live demo: [chinmaya301-polyrag.hf.space](https://chinmaya301-polyrag.hf.space)**
 (free Hugging Face Space; may take a moment to wake if idle)
 
+**Related RAG case study:** [Financial Balance-Sheet RAG: Building Citation-Grounded Document Intelligence](https://app.chinmayarora.com/blog/financial-balance-sheet-rag/)
+
 Ask a question about AI governance and get **side-by-side, citation-grounded answers
 from multiple LLMs** — same question, same retrieved context, so differences in the
 answers are attributable to the model, not to retrieval variance.
