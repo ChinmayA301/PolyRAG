@@ -16,6 +16,10 @@ def client(tmp_path, monkeypatch):
     VectorStore.build(chunks, embedder).save(tmp_path)
     monkeypatch.setattr(settings, "index_dir", tmp_path)
     monkeypatch.setattr(settings, "embedder", "hashing")
+    monkeypatch.setattr(settings, "groq_api_key", "test-groq-key")
+    monkeypatch.setattr(settings, "github_token", "")
+    monkeypatch.setattr(settings, "openrouter_api_key", "")
+    monkeypatch.setattr(settings, "ollama_enabled", False)
     with TestClient(api.app) as c:
         yield c
 
@@ -27,8 +31,15 @@ def test_healthz_reports_index(client):
 
 
 def test_models_endpoint(client):
-    aliases = {m["alias"] for m in client.get("/models").json()}
-    assert {"llama", "gpt-oss", "deepseek", "mock"} <= aliases
+    models = {m["alias"]: m for m in client.get("/models").json()}
+    assert {"llama", "gpt-oss", "gpt-oss-20b", "qwen-3.6", "deepseek", "mock"} <= models.keys()
+    assert models["gpt-oss"]["selectable"] is True
+    assert models["qwen-3.6"]["selectable"] is True
+    assert models["deepseek"]["selectable"] is False
+    assert models["llama"]["archived"] is True
+    assert models["llama"]["ready"] is False
+    assert models["llama"]["selectable"] is False
+    assert models["llama"]["replacement"] == "gpt-oss"
 
 
 def test_ask_with_mock(client):
@@ -42,3 +53,12 @@ def test_ask_with_mock(client):
 def test_compare_validates_aliases(client):
     resp = client.post("/compare", json={"question": "q?", "models": ["nope"]})
     assert resp.status_code == 422
+
+
+def test_archived_alias_returns_replacement_without_provider_call(client):
+    resp = client.post("/ask", json={"question": "risk functions?", "model": "llama"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["answer"] == ""
+    assert "archived" in body["model"]["error"]
+    assert "gpt-oss" in body["model"]["error"]

@@ -1,10 +1,10 @@
 """Model registry over OpenAI-compatible endpoints.
 
 Every provider here speaks the OpenAI chat-completions protocol, so one client
-(the official `openai` SDK) covers Groq, OpenRouter, and a local Ollama server.
-Model aliases are what users type (`--model llama`); each maps to a concrete
-provider + model id. The registry is data, not code, so swapping a deprecated
-hosted model is a one-line change.
+(the official `openai` SDK) covers Groq, GitHub Models, OpenRouter, and a local
+Ollama server. Model aliases map to concrete provider model IDs. Retired models
+stay in the registry as non-selectable historical records with named
+replacements, so old aliases remain explainable without sending doomed calls.
 """
 
 from __future__ import annotations
@@ -28,20 +28,45 @@ class ModelSpec:
     provider: str  # groq | openrouter | ollama | mock
     model_id: str
     description: str
+    archived: bool = False
+    replacement: str | None = None
+    ui_selectable: bool = True
 
 
 REGISTRY: dict[str, ModelSpec] = {
     spec.alias: spec
     for spec in [
-        ModelSpec("llama", "groq", "llama-3.3-70b-versatile", "Meta LLaMA 3.3 70B (Groq free tier)"),
         ModelSpec("gpt-oss", "groq", "openai/gpt-oss-120b", "OpenAI gpt-oss 120B open-weight (Groq free tier)"),
-        ModelSpec("qwen", "groq", "qwen/qwen3-32b", "Alibaba Qwen3 32B (Groq free tier)"),
-        ModelSpec("scout", "groq", "meta-llama/llama-4-scout-17b-16e-instruct", "Meta LLaMA 4 Scout (Groq free tier)"),
+        ModelSpec("gpt-oss-20b", "groq", "openai/gpt-oss-20b", "OpenAI gpt-oss 20B open-weight (Groq free tier)"),
+        ModelSpec("qwen-3.6", "groq", "qwen/qwen3.6-27b", "Alibaba Qwen 3.6 27B (Groq preview)"),
         ModelSpec("deepseek", "github", "deepseek/deepseek-v3-0324", "DeepSeek V3 (GitHub Models free tier; needs GITHUB_TOKEN)"),
         ModelSpec("deepseek-r1", "github", "deepseek/deepseek-r1-0528", "DeepSeek R1 reasoning (GitHub Models free tier; needs GITHUB_TOKEN)"),
-        ModelSpec("hermes", "openrouter", "nousresearch/hermes-3-llama-3.1-405b:free", "Hermes 3 LLaMA 405B (OpenRouter free tier; needs OPENROUTER_API_KEY)"),
-        ModelSpec("ollama", "ollama", "llama3.2", "Local model via Ollama (no API key; edit model_id to taste)"),
-        ModelSpec("mock", "mock", "mock", "Deterministic offline provider for tests and demos without keys"),
+        ModelSpec("gpt-4.1-mini", "github", "openai/gpt-4.1-mini", "OpenAI GPT-4.1 mini (GitHub Models; needs GITHUB_TOKEN)"),
+        ModelSpec("nemotron", "openrouter", "nvidia/nemotron-3-super-120b-a12b:free", "NVIDIA Nemotron 3 Super 120B (OpenRouter free tier; needs OPENROUTER_API_KEY)"),
+        ModelSpec("ollama", "ollama", "llama3.2", "Local model via Ollama (set OLLAMA_ENABLED=true to show in the web UI)"),
+        ModelSpec("mock", "mock", "mock", "Deterministic offline provider for tests and demos without keys", ui_selectable=False),
+        # Historical records: retained for old commands/bookmarks, never offered
+        # by the UI, and never sent to a provider after retirement.
+        ModelSpec(
+            "llama", "groq", "llama-3.3-70b-versatile",
+            "Meta LLaMA 3.3 70B (Groq; archived ahead of 2026-08-16 shutdown)",
+            archived=True, replacement="gpt-oss",
+        ),
+        ModelSpec(
+            "qwen", "groq", "qwen/qwen3-32b",
+            "Alibaba Qwen 3 32B (Groq; retired 2026-07-17)",
+            archived=True, replacement="qwen-3.6",
+        ),
+        ModelSpec(
+            "scout", "groq", "meta-llama/llama-4-scout-17b-16e-instruct",
+            "Meta LLaMA 4 Scout (Groq; retired 2026-07-17)",
+            archived=True, replacement="qwen-3.6",
+        ),
+        ModelSpec(
+            "hermes", "openrouter", "nousresearch/hermes-3-llama-3.1-405b:free",
+            "Hermes 3 LLaMA 405B free route (OpenRouter; archived)",
+            archived=True, replacement="nemotron",
+        ),
     ]
 }
 
@@ -81,7 +106,7 @@ def _client_for(spec: ModelSpec) -> OpenAI:
     if spec.provider == "github":
         if not settings.github_token:
             raise ProviderError(
-                "GITHUB_TOKEN is not set (use a PAT with models:read, or `gh auth token`)")
+                "GITHUB_TOKEN is not set (use a dedicated PAT with models:read)")
         return OpenAI(base_url=GITHUB_MODELS_BASE_URL, api_key=settings.github_token,
                       timeout=settings.request_timeout)
     if spec.provider == "ollama":
@@ -111,6 +136,16 @@ def complete(alias: str, messages: list[dict], *, max_tokens: int | None = None,
         raise KeyError(f"Unknown model alias {alias!r}. Known: {', '.join(REGISTRY)}")
 
     started = time.perf_counter()
+    if spec.archived:
+        replacement = f" Use `{spec.replacement}` instead." if spec.replacement else ""
+        return Completion(
+            spec.alias,
+            spec.model_id,
+            spec.provider,
+            "",
+            latency_s=time.perf_counter() - started,
+            error=f"Model alias `{spec.alias}` is archived and no longer queried.{replacement}",
+        )
     if spec.provider == "mock":
         return _mock_completion(spec, messages, started)
 
@@ -138,16 +173,24 @@ def complete(alias: str, messages: list[dict], *, max_tokens: int | None = None,
 
 
 def available_aliases() -> list[dict]:
-    """Registry plus a 'ready' flag: does this machine have what the alias needs?"""
+    """Registry plus deployment readiness and web-UI selectability metadata."""
     out = []
     for spec in REGISTRY.values():
-        ready = (
+        ready = not spec.archived and (
             spec.provider == "mock"
             or (spec.provider == "groq" and bool(settings.groq_api_key))
             or (spec.provider == "openrouter" and bool(settings.openrouter_api_key))
             or (spec.provider == "github" and bool(settings.github_token))
-            or spec.provider == "ollama"  # can't know without probing; assume maybe
+            or (spec.provider == "ollama" and settings.ollama_enabled)
         )
-        out.append({"alias": spec.alias, "provider": spec.provider, "model_id": spec.model_id,
-                    "description": spec.description, "ready": ready})
+        out.append({
+            "alias": spec.alias,
+            "provider": spec.provider,
+            "model_id": spec.model_id,
+            "description": spec.description,
+            "ready": ready,
+            "archived": spec.archived,
+            "replacement": spec.replacement,
+            "selectable": ready and spec.ui_selectable,
+        })
     return out

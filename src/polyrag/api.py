@@ -10,8 +10,8 @@ from __future__ import annotations
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
 from fastapi.concurrency import run_in_threadpool
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from polyrag import rag
@@ -42,13 +42,14 @@ app = FastAPI(title="polyrag", version="0.1.0", lifespan=lifespan)
 
 class AskRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
-    model: str = "llama"
+    model: str = "gpt-oss"
     k: int | None = Field(default=None, ge=1, le=20)
 
 
 class CompareRequest(BaseModel):
     question: str = Field(min_length=3, max_length=2000)
-    models: list[str] = Field(default=["llama", "gpt-oss"], min_length=1, max_length=6)
+    models: list[str] = Field(
+        default=["gpt-oss", "gpt-oss-20b"], min_length=1, max_length=6)
     k: int | None = Field(default=None, ge=1, le=20)
 
 

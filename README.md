@@ -12,10 +12,10 @@ answers are attributable to the model, not to retrieval variance.
 The corpus is real, public policy documents (NIST AI RMF, NIST GenAI Profile,
 EU AI Act, Blueprint for an AI Bill of Rights, OECD AI Principles) — no synthetic data.
 
-**Everything runs on free tiers**: Groq for LLaMA/GPT-OSS/Qwen, GitHub Models for
-DeepSeek, OpenRouter free models, local Ollama as a no-key option, local embeddings,
-exact FAISS search, and a Cloud Run deployment that fits the always-free tier at demo
-traffic.
+**The demo can run on free, rate-limited provider tiers**: Groq for GPT-OSS/Qwen,
+GitHub Models for DeepSeek/GPT-4.1 mini, optional OpenRouter models, local Ollama,
+local embeddings, and exact FAISS search. Provider catalogs and quotas change, so
+the registry distinguishes active models from archived historical entries.
 
 ![Live comparison: LLaMA 3.3 (Groq), GPT-OSS 120B (Groq), and DeepSeek V3 (GitHub Models) answering the same EU AI Act question from identical retrieved context](docs/compare.png)
 
@@ -49,10 +49,11 @@ traffic.
  │ top-k retrieve once → numbered context  │
  │ fan out in parallel to N models via     │
  │ OpenAI-compatible APIs:                 │
- │   Groq:          LLaMA 3.3 70B, GPT-OSS │
- │                  120B, Qwen3, Scout     │
- │   GitHub Models: DeepSeek V3 + R1       │
- │   OpenRouter:    Hermes 3 405B (:free)  │
+ │   Groq:          GPT-OSS 120B + 20B,    │
+ │                  Qwen 3.6 27B           │
+ │   GitHub Models: DeepSeek V3 + R1,      │
+ │                  GPT-4.1 mini           │
+ │   OpenRouter:    Nemotron 3 Super       │
  │   Ollama:        any local model, no key│
  │ answers must cite blocks as [n]         │
  └─────────────────────────────────────────┘
@@ -74,10 +75,10 @@ polyrag ingest                     # download + extract the real corpus (~5 min,
 polyrag index                      # chunk + embed + build FAISS index
 polyrag models                     # what's ready on this machine
 
-polyrag ask "What are the four core functions of the NIST AI RMF?" -m llama
+polyrag ask "What are the four core functions of the NIST AI RMF?" -m gpt-oss
 polyrag compare "What obligations does the EU AI Act place on providers of high-risk AI systems?" \
-    -m llama -m gpt-oss -m deepseek
-polyrag eval -m llama -m gpt-oss   # retrieval hit@k + per-model generation stats
+    -m gpt-oss -m gpt-oss-20b -m deepseek
+polyrag eval -m gpt-oss -m gpt-oss-20b   # retrieval hit@k + generation stats
 polyrag serve                      # web UI at http://localhost:8080
 ```
 
@@ -109,8 +110,8 @@ This repo is a portfolio artifact; the claims it supports are deliberately scope
 
 | Claim | Status |
 |---|---|
-| Multi-model retrieval via OpenAI-compatible APIs (Groq, GitHub Models, OpenRouter, Ollama) | Implemented; LLaMA 3.3, GPT-OSS 120B, Qwen3 verified live on Groq free tier |
-| DeepSeek support | Verified live: DeepSeek V3 + R1 via GitHub Models free tier (any PAT with `models:read`). Groq and OpenRouter both retired their free DeepSeek offerings — the registry made this a one-line swap |
+| Multi-model retrieval via OpenAI-compatible APIs (Groq, GitHub Models, OpenRouter, Ollama) | Implemented. Current active mappings are separated from archived model records; the July 2026 live results remain in the verification log as historical evidence. |
+| DeepSeek support | Verified live: DeepSeek V3 + R1 via GitHub Models free tier (use a dedicated PAT with `models:read`). Groq and OpenRouter both retired their free DeepSeek offerings — the registry made this a one-line swap |
 | FAISS vector search | Exact `IndexFlatIP` over normalized MiniLM embeddings — appropriate at this corpus size; swap to IVF/HNSW only when scale demands it |
 | Crawl4AI ingestion | Default web fetcher (HTTP strategy; `js: true` per source enables browser rendering); httpx+trafilatura fallback, and every record is tagged with the path that produced it |
 | OCR | RapidOCR fallback for PDF pages with no text layer; pages that need OCR without it installed are disclosed as gaps, never silently dropped |
@@ -140,7 +141,7 @@ deploy/      cloudrun.sh (Cloud Build → Cloud Run)
 docker compose up --build              # http://localhost:8080
 
 # Hugging Face Space (free, no card; what the live demo runs)
-HF_TOKEN=... GROQ_API_KEY=... python deploy/hf_space.py
+HF_TOKEN=... GROQ_API_KEY=... GITHUB_TOKEN=... python deploy/hf_space.py
 
 # Cloud Run (needs a billing-linked GCP project; builds remotely with Cloud Build)
 export GROQ_API_KEY=...
@@ -148,8 +149,9 @@ export GROQ_API_KEY=...
 ```
 
 The image bakes in the FAISS index and pre-downloads the embedding model, so cold
-starts don't fetch anything. The hosted demo exposes the Groq-served models; keys
-live in platform secrets, never in the image or git history.
+starts don't fetch anything. The hosted demo exposes only active models whose provider
+credentials are configured. Keys live in platform secrets, never in the image or git
+history. Use a dedicated GitHub PAT with only `models:read` for `GITHUB_TOKEN`.
 
 ## License
 

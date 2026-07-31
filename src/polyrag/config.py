@@ -21,14 +21,13 @@ PROJECT_ROOT = _project_root()
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    # Provider credentials. Groq's free tier covers the default models; OpenRouter's
-    # free tier lights up DeepSeek; Ollama needs no key at all.
+    # Provider credentials. Use a dedicated, minimally scoped models:read PAT
+    # for GitHub Models; do not deploy a general-purpose gh CLI token.
     groq_api_key: str = ""
     openrouter_api_key: str = ""
-    # GitHub Models free tier (serves DeepSeek): any PAT with models:read,
-    # or simply `GITHUB_TOKEN=$(gh auth token)`.
     github_token: str = ""
     ollama_base_url: str = "http://localhost:11434/v1"
+    ollama_enabled: bool = False
 
     # Data layout
     data_dir: Path = PROJECT_ROOT / "data"
@@ -45,11 +44,10 @@ class Settings(BaseSettings):
     chunk_overlap: int = 200
 
     # Retrieval
-    top_k: int = 6
+    top_k: int = 4
 
-    # Generation. Reasoning models (qwen3, deepseek-r1) burn completion tokens
-    # on <think> traces before the visible answer, so the ceiling is generous.
-    max_tokens: int = 1600
+    # Keep the public demo concise and inside free-tier token budgets.
+    max_tokens: int = 600
     temperature: float = 0.2
     request_timeout: float = 60.0
 
