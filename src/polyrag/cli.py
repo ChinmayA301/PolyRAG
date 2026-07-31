@@ -85,7 +85,7 @@ def models() -> None:
 
 
 @app.command()
-def ask(question: str, model: str = typer.Option("llama", "--model", "-m"),
+def ask(question: str, model: str = typer.Option("gpt-oss", "--model", "-m"),
         k: int = typer.Option(None, help="Top-k chunks"),
         as_json: bool = typer.Option(False, "--json")) -> None:
     """Ask one model, grounded in the index, with citations."""
@@ -112,7 +112,7 @@ def ask(question: str, model: str = typer.Option("llama", "--model", "-m"),
 
 @app.command()
 def compare(question: str,
-            model: list[str] = typer.Option(["llama", "gpt-oss"], "--model", "-m"),
+            model: list[str] = typer.Option(["gpt-oss", "gpt-oss-20b"], "--model", "-m"),
             k: int = typer.Option(None, help="Top-k chunks"),
             as_json: bool = typer.Option(False, "--json")) -> None:
     """Fan the same question + same retrieved context out to several models."""

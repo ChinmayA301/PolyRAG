@@ -46,11 +46,11 @@
 const modelsDiv = document.getElementById('models');
 const grid = document.getElementById('grid');
 const sourcesDiv = document.getElementById('sources');
-const defaults = new Set(['llama','gpt-oss']);
+const defaults = new Set(['gpt-oss','gpt-oss-20b']);
 
 fetch('/models').then(r => r.json()).then(list => {
-  modelsDiv.innerHTML = list.filter(m => m.alias !== 'mock').map(m =>
-    `<label><input type="checkbox" value="${m.alias}" ${defaults.has(m.alias) ? 'checked' : ''} ${m.ready ? '' : ''}> ${m.alias} <span class="badge">${m.provider}</span></label>`
+  modelsDiv.innerHTML = list.filter(m => m.selectable).map(m =>
+    `<label><input type="checkbox" value="${m.alias}" ${defaults.has(m.alias) ? 'checked' : ''}> ${m.alias} <span class="badge">${m.provider}</span></label>`
   ).join('');
 });
 

@@ -43,6 +43,13 @@ def test_missing_key_surfaces_as_error_not_exception(store, embedder, monkeypatc
     assert result.citation_coverage == 0.0
 
 
+def test_archived_model_returns_named_replacement_without_network():
+    result = complete("qwen", [{"role": "user", "content": "Question: q?"}])
+    assert result.error
+    assert "archived" in result.error
+    assert "qwen-3.6" in result.error
+
+
 def test_citation_extraction_handles_grouped_brackets():
     from polyrag.rag import _extract_citations
 

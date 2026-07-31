@@ -1,5 +1,11 @@
 # Verification log
 
+> **Historical run notice (2026-07-31):** The live results below record the
+> provider catalog as it existed on 2026-07-06. Groq retired Qwen 3 32B and
+> Llama 4 Scout on 2026-07-17 and announced the Llama 3.3 70B shutdown for
+> 2026-08-16. Their aliases remain in the registry as non-selectable historical
+> records with replacement metadata; current defaults are GPT-OSS 120B and 20B.
+
 Real numbers from a real run — reproduce with the commands shown. Environment:
 Apple Silicon Mac (embeddings on MPS), Python 3.12, Groq free tier, 2026-07-06.
 
@@ -88,6 +94,7 @@ same shared context as LLaMA:
 Dockerfile running on Hugging Face Spaces' free Docker tier (no card), FAISS
 index and embedding model baked into the image, GROQ_API_KEY as a Space secret.
 Verified after build: `/healthz` reports the baked index; a live `/compare`
-returned grounded answers. The hosted demo serves the Groq models only —
-the GitHub Models token is deliberately not deployed (a `gh` CLI token has repo
-access; a scoped models:read PAT could be added later).
+returned grounded answers. At the time of this run, the hosted demo served Groq
+models only. The deployment script now supports an optional dedicated GitHub
+Models PAT with only `models:read`; general-purpose `gh` CLI tokens should not
+be deployed.

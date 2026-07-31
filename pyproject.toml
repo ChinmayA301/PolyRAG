@@ -1,7 +1,7 @@
 [project]
 name = "polyrag"
 version = "0.1.0"
-description = "Multi-model RAG over real AI-governance documents: FAISS retrieval, Crawl4AI + OCR ingestion, side-by-side answers from LLaMA / GPT-OSS / Qwen / DeepSeek via OpenAI-compatible APIs."
+description = "Multi-model RAG over real AI-governance documents: FAISS retrieval, OCR/web ingestion, and citation-grounded comparison via OpenAI-compatible APIs."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
@@ -44,3 +44,6 @@ addopts = "-q"
 [tool.ruff]
 line-length = 100
 src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
