@@ -1,7 +1,8 @@
 """Deploy polyrag to a Hugging Face Space (Docker, free tier, no card required).
 
 Usage:
-    HF_TOKEN=... GROQ_API_KEY=... python deploy/hf_space.py [owner/space-name]
+    HF_TOKEN=... GROQ_API_KEY=... GITHUB_TOKEN=... \
+        python deploy/hf_space.py [owner/space-name]
 
 Requires a built index (`polyrag ingest && polyrag index`) — the Space image
 bakes it in, same as the Cloud Run deployment. Idempotent: re-running updates
@@ -50,6 +51,8 @@ DIRS = ["src", "static", "data/index"]
 def main() -> None:
     token = os.environ.get("HF_TOKEN") or sys.exit("HF_TOKEN not set")
     groq_key = os.environ.get("GROQ_API_KEY") or sys.exit("GROQ_API_KEY not set")
+    github_models_key = os.environ.get("GITHUB_TOKEN")
+    openrouter_key = os.environ.get("OPENROUTER_API_KEY")
     if not (ROOT / "data/index/index.faiss").exists():
         sys.exit("No index at data/index — run `polyrag ingest && polyrag index` first")
 
@@ -59,6 +62,10 @@ def main() -> None:
     api.create_repo(repo_id, repo_type="space", space_sdk="docker", exist_ok=True)
     # Secret is stored on the Space, never in its git history.
     api.add_space_secret(repo_id, "GROQ_API_KEY", groq_key)
+    if github_models_key:
+        api.add_space_secret(repo_id, "GITHUB_TOKEN", github_models_key)
+    if openrouter_key:
+        api.add_space_secret(repo_id, "OPENROUTER_API_KEY", openrouter_key)
 
     with tempfile.TemporaryDirectory() as tmp:
         stage = Path(tmp)
